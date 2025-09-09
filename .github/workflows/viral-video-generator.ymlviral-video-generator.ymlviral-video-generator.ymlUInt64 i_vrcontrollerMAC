@@ -1,0 +1,69 @@
+name: Viral Video Generator
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      trending_topic:
+        description: 'Override trending topic'
+        required: false
+        default: ''
+
+jobs:
+  generate-viral-video:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        
+    - name: Fetch trending topics
+      run: |
+        python scripts/fetch_trends.py
+        
+    - name: Analyze viral patterns
+      run: |
+        python scripts/analyze_patterns.py
+        
+    - name: Generate video concept
+      run: |
+        python scripts/generate_concept.py
+        
+    - name: Create video script
+      run: |
+        python scripts/create_script.py
+        
+    - name: Generate video assets
+      run: |
+        python scripts/generate_assets.py
+        
+    - name: Compile video
+      run: |
+        python scripts/compile_video.py
+        
+    - name: Upload to storage
+      run: |
+        python scripts/upload_video.py
+      env:
+        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        TIKTOK_API_KEY: ${{ secrets.TIKTOK_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        
+    - name: Commit generated assets
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add output/
+        git commit -m "Generated viral video: $(date)" || exit 0
+        git push
